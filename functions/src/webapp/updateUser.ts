@@ -50,9 +50,12 @@ export const updateUser = async (
 
   try {
     await updateUserFields(db, user);
-    await logUpdateUserEvent(user);
     res.status(200).send({success: true, message: "Added/Updated user."});
-    return;
+    try {
+      await logUpdateUserEvent(user);
+    } catch (error) {
+      logger.warn("Streaming Buffer Error:", {structuredData: true, error});
+    }
   } catch (error) {
     logger.error("Error adding/updating user:", {structuredData: true, error});
     res.status(500).send({

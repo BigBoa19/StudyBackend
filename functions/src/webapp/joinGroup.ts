@@ -81,8 +81,11 @@ export const joinGroup = async (
     const isJoinEvent = true;
     await updateGroupMembership(db, isJoinEvent, email, user, group.id);
     res.status(200).send({success: true, message: "Added user to group."});
-    await logJoinEvent(isJoinEvent, email, group.id);
-    return;
+    try {
+      await logJoinEvent(isJoinEvent, email, group.id);
+    } catch (error) {
+      logger.error("Bigquery Error: ", {structuredData: true, error});
+    }
   } catch (error) {
     logger.error("Error joining group:", {structuredData: true, error});
     res.status(500).send({

@@ -75,7 +75,11 @@ export const leaveGroup = async (
     const isJoinEvent = false;
     await updateGroupMembership(db, isJoinEvent, email, user, group.id);
     res.status(200).send({success: true, message: "Removed user from group."});
-    await logJoinEvent(isJoinEvent, email, group.id);
+    try {
+      await logJoinEvent(isJoinEvent, email, group.id);
+    } catch (error) {
+      logger.error("Bigquery Error: ", {structuredData: true, error});
+    }
     return;
   } catch (error) {
     logger.error("Error leaving group:", {structuredData: true, error});
