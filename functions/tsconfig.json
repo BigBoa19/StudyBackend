@@ -1,14 +1,13 @@
 {
   "compilerOptions": {
-    "module": "NodeNext",
-    "esModuleInterop": true,
-    "moduleResolution": "nodenext",
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "outDir": "lib",
-    "sourceMap": true,
-    "strict": true,
-    "target": "es2017"
+    "module": "CommonJS",               // Ensures CommonJS module output
+    "target": "ES2020",                 // Modern JavaScript output
+    "moduleResolution": "node",         // Node-style module resolution
+    "outDir": "lib",                    // Compiled files output
+    "rootDir": "src",                   // Root directory for source files
+    "strict": true,                     // Enable all strict type-checking options
+    "esModuleInterop": true,            // Enable compatibility with ESM modules
+    "skipLibCheck": true                // Skip type checking of declaration files
   },
   "compileOnSave": true,
   "include": ["src"]
