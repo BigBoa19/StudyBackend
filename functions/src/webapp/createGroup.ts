@@ -20,19 +20,20 @@ export const createGroupHandler = async (
 
   const { email, group } = req.body;
 
-  if (!group || !group.id) {
+  if (!group) {
     res.status(400).send({
       success: false,
-      message: "Invalid payload. 'group' object with an 'id' is required.",
+      message: "Invalid payload. 'group' object is required.",
     });
     return;
   }
 
   try {
-    await createGroup(db, group, email);
+    const groupId = await createGroup(db, group, email);
     res.status(200).send({
       success: true,
       message: "Group created successfully.",
+      groupId: groupId,
     });
   } catch (error) {
     logger.error("Error creating group:", {structuredData: true, error});
