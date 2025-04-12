@@ -1,36 +1,68 @@
-import dotenv from "dotenv";
-import Mailgun from "mailgun.js";
-import FormData from "form-data";
-import { groupDetails } from "../types";
+import {Request, Response} from "express";
+import * as logger from "firebase-functions/logger";
+import {groupDetails} from "../types";
+import {Firestore} from "firebase-admin/firestore";
+import {
+  fetchGroup,
+  sendSimpleMessageTemplate,
+} from "../helpers";
 
-dotenv.config();
-
-async function sendSimpleMessageTemplate(group: groupDetails) {
-    const mailgun = new Mailgun(FormData);
-    const mg = mailgun.client({ username: "api", key: process.env.MAILGUN_KEY || ""});
-
-    try {
-      const data = await mg.messages.create("scottylabs.org", {
-        from: "Mailgun Sandbox <postmaster@scottylabsm.org>",
-        to: group.participantDetails.map(participant => `${participant.name} <${participant.email}>`),
-        subject: `Study Group Reminder: ${group.title}`,
-        template: "scottyfinder reminder",
-        "h:X-Mailgun-Variables": JSON.stringify({ 
-          groupTitle: group.title,
-          groupLocation: group.location,
-          groupPurpose: group.purpose,
-          groupCourse: group.course,
-          startTime: group.startTime.toDate().toLocaleString(),
-          participants: group.participantDetails.map(p => ({
-            name: p.name,
-            email: p.email,
-            imageUrl: p.url
-          }))
-        }),
-      });
-      console.log(data);
-    } catch (error) {
-      console.log(error);
-    }
+export const sendEmail = async (
+  db: Firestore,
+  req: Request,
+  res: Response,
+) => {
+  logger.info("Received sendEmail request", {structuredData: true});
+  if (req.method !== "POST") {
+    res.status(405).send({
+      success: false,
+      message: "Method Not Allowed. Please use POST.",
+    });
+    return;
   }
-//   sendSimpleMessageTemplate();
+  const {groupID} = req.body;
+  if (!groupID) {
+    res.status(400).send({
+      success: false,
+      message: "Invalid payload. 'groupID' is required.",
+    });
+    return;
+  }
+
+  try {
+    const groupDocSnapshot = await fetchGroup(db, groupID);
+
+    if (!groupDocSnapshot.exists) {
+      res.status(400).send({success: false, message: "Group not found."});
+      return;
+    }
+
+    const group = groupDocSnapshot.data() as groupDetails;
+
+    if (!(group && group.participantDetails)) {
+      res.status(400).send({
+        success: false,
+        message: "Group missing required field: participantDetails.",
+      });
+      return;
+    }
+
+    if (group.participantDetails.length === 0) {
+      res.status(400).send({
+        success: false,
+        message: "Group has no participants to send email to.",
+      });
+      return;
+    }
+
+    await sendSimpleMessageTemplate(group);
+    res.status(200).send({success: true, message: "Email sent to group members."});
+  } catch (error) {
+    logger.error("Error sending email:", {structuredData: true, error});
+    res.status(500).send({
+      success: false,
+      message: "Internal Server Error",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
