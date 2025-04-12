@@ -127,29 +127,32 @@ export const updateUserFields = async (db: Firestore,
 export const sendSimpleMessageTemplate = async (group: groupDetails) => {
   dotenv.config();
   const mailgun = new Mailgun(FormData);
-  const mg = mailgun.client({ username: "api", key: process.env.MAILGUN_KEY || ""});
+  const mg = mailgun.client(
+    {username: "api", key: process.env.MAILGUN_KEY || ""}
+  );
 
   try {
     const data = await mg.messages.create("scottylabs.org", {
-      from: "Mailgun Sandbox <postmaster@scottylabsm.org>",
-      to: group.participantDetails.map(participant => `${participant.name} <${participant.email}>`),
-      subject: `Study Group Reminder: ${group.title}`,
-      template: "scottyfinder reminder",
-      "h:X-Mailgun-Variables": JSON.stringify({ 
+      "from": "Mailgun Sandbox <postmaster@scottylabsm.org>",
+      "to": group.participantDetails.map(
+        (participant) => `${participant.name} <${participant.email}>`),
+      "subject": `Study Group Reminder: ${group.title}`,
+      "template": "scottyfinder reminder",
+      "h:X-Mailgun-Variables": JSON.stringify({
         groupTitle: group.title,
         groupLocation: group.location,
         groupPurpose: group.purpose,
         groupCourse: group.course,
         startTime: group.startTime.toDate().toLocaleString(),
-        participants: group.participantDetails.map(p => ({
+        participants: group.participantDetails.map((p) => ({
           name: p.name,
           email: p.email,
-          imageUrl: p.url
-        }))
+          imageUrl: p.url,
+        })),
       }),
     });
     console.log(data);
   } catch (error) {
     console.log(error);
   }
-}
+};

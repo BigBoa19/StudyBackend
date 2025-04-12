@@ -56,7 +56,9 @@ export const sendEmail = async (
     }
 
     await sendSimpleMessageTemplate(group);
-    res.status(200).send({success: true, message: "Email sent to group members."});
+    res.status(200).send(
+      {success: true, message: "Email sent to group members."}
+    );
   } catch (error) {
     logger.error("Error sending email:", {structuredData: true, error});
     res.status(500).send({

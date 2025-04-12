@@ -15,7 +15,7 @@ export const createGroupHandler = async (
       success: false,
       message: "Method Not Allowed. Please use POST.",
     });
-     return;
+    return;
   }
 
   const {group, email} = req.body;
