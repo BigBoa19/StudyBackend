@@ -5,7 +5,7 @@ const location = "us-east4";
 const queue = "reminderEmails";
 const functionURL = "https://sendemail-jmpi7y54bq-uc.a.run.app";
 
-export const createCloudTask = async () => {
+export const createCloudTask = async (groupID: string) => {
   const client = new CloudTasksClient();
   const parent = client.queuePath(projectId, location, queue);
   const task = {
@@ -13,7 +13,7 @@ export const createCloudTask = async () => {
       httpMethod: "POST" as const,
       url: functionURL,
       headers: {"Content-Type": "application/json"},
-      body: Buffer.from(JSON.stringify({groupID: "5wRCaui9brsWlflBBDgi"})).toString("base64"),
+      body: Buffer.from(JSON.stringify({groupID: groupID})).toString("base64"),
     },
     scheduleTime: {
       seconds: Math.floor(Date.now() / 1000) + 60,
@@ -26,4 +26,3 @@ export const createCloudTask = async () => {
     console.error("Error creating task:", error);
   }
 };
-createCloudTask();

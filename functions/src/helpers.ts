@@ -127,32 +127,34 @@ export const updateUserFields = async (db: Firestore,
 export const sendSimpleMessageTemplate = async (group: groupDetails) => {
   dotenv.config();
   const mailgun = new Mailgun(FormData);
-  const mg = mailgun.client(
-    {username: "api", key: process.env.MAILGUN_KEY || ""}
-  );
+  const mg = mailgun.client({ username: "api", key: process.env.MAILGUN_KEY || ""});
 
   try {
+    const participantsList = group.participantDetails.map(p => 
+      `<div style="margin-bottom: 10px;">
+        <img src="${p.url}" alt="${p.name}'s profile" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; vertical-align: middle;">
+        <span style="vertical-align: middle;">${p.name} (${p.email})</span>
+      </div>`
+    ).join('');
+
+    const htmlContent = `
+      <h2>Study Group Reminder: ${group.title}</h2>
+      <p><strong>Course:</strong> ${group.course}</p>
+      <p><strong>Location:</strong> ${group.location}</p>
+      <p><strong>Purpose:</strong> ${group.purpose}</p>
+      <p><strong>Start Time:</strong> ${group.startTime.toDate().toLocaleString()}</p>
+      <h3>Participants:</h3>
+      ${participantsList}
+    `;
+
     const data = await mg.messages.create("scottylabs.org", {
-      "from": "Mailgun Sandbox <postmaster@scottylabsm.org>",
-      "to": group.participantDetails.map(
-        (participant) => `${participant.name} <${participant.email}>`),
-      "subject": `Study Group Reminder: ${group.title}`,
-      "template": "scottyfinder reminder",
-      "h:X-Mailgun-Variables": JSON.stringify({
-        groupTitle: group.title,
-        groupLocation: group.location,
-        groupPurpose: group.purpose,
-        groupCourse: group.course,
-        startTime: group.startTime.toDate().toLocaleString(),
-        participants: group.participantDetails.map((p) => ({
-          name: p.name,
-          email: p.email,
-          imageUrl: p.url,
-        })),
-      }),
+      from: "Mailgun Sandbox <postmaster@scottylabsm.org>",
+      to: group.participantDetails.map(participant => `${participant.name} <${participant.email}>`),
+      subject: `Study Group Reminder: ${group.title}`,
+      html: htmlContent
     });
     console.log(data);
   } catch (error) {
     console.log(error);
   }
-};
+}
