@@ -18,7 +18,7 @@ export const createGroupHandler = async (
     return;
   }
 
-  const {groupDetails: group, string: email} = req.body;
+  const { email, group } = req.body;
 
   if (!group || !group.id) {
     res.status(400).send({
