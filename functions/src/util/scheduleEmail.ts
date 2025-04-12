@@ -26,3 +26,4 @@ export const createCloudTask = async () => {
         console.error("Error creating task:", error);
       }
 }
+createCloudTask();
