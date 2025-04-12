@@ -15,6 +15,37 @@ export const fetchUser = async (db: Firestore, email: string) => {
   return docSnapshot;
 };
 
+export const createGroup = async (
+  db: Firestore,
+  group: groupDetails,
+  email?: string,
+): Promise<void> => {
+  const groupDocPath = `Study Groups/${group.id}`;
+  const groupDocRef = db.doc(groupDocPath);
+
+  // Check if a group with this id already exists.
+  const groupSnapshot = await groupDocRef.get();
+  if (groupSnapshot.exists) {
+    throw new Error(`Group with id ${group.id} already exists`);
+  }
+
+  await groupDocRef.set({
+    ...group,
+    participantDetails: group.participantDetails || [],
+  });
+
+  if (email) {
+    const userDocPath = `Users/${email}`;
+    const userDocRef = db.doc(userDocPath);
+    await userDocRef.set(
+      {
+        joinedGroups: FieldValue.arrayUnion(group.id),
+      },
+      {merge: true},
+    );
+  }
+};
+
 export const isUserInGroup = (
   user: Partial<userDetails>,
   group: groupDetails,
