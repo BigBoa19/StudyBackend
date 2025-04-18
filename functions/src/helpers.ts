@@ -1,9 +1,12 @@
-import {Firestore, FieldValue} from "firebase-admin/firestore";
+import {
+  Firestore,
+  FieldValue,
+} from "firebase-admin/firestore";
 import {userDetails, groupDetails} from "./types";
 import dotenv from "dotenv";
 import Mailgun from "mailgun.js";
 import FormData from "form-data";
-
+import { firestore } from "firebase-admin";
 
 export const fetchGroup = async (db: Firestore, id: string) => {
   const docPath = `Study Groups/${id}`;
@@ -22,7 +25,7 @@ export const fetchUser = async (db: Firestore, email: string) => {
 export const createGroup = async (
   db: Firestore,
   group: Omit<groupDetails, "id">,
-  email?: string,
+  email?: string
 ): Promise<string> => {
   const groupCollectionRef = db.collection("Study Groups");
 
@@ -40,7 +43,7 @@ export const createGroup = async (
       {
         joinedGroups: FieldValue.arrayUnion(docRef.id),
       },
-      {merge: true},
+      {merge: true}
     );
   }
 
@@ -49,7 +52,7 @@ export const createGroup = async (
 
 export const isUserInGroup = (
   user: Partial<userDetails>,
-  group: groupDetails,
+  group: groupDetails
 ): boolean => {
   if (!user.joinedGroups) {
     return false;
@@ -60,6 +63,16 @@ export const isUserInGroup = (
     }
   }
   return false;
+};
+
+export const isUserOwnerOfGroup = (
+  email: string,
+  group: groupDetails
+): boolean => {
+  if (!group.participantDetails) {
+    return false;
+  }
+  return group.participantDetails[0].email == email;
 };
 
 export const isGroupFull = (group: groupDetails): boolean => {
@@ -73,7 +86,7 @@ export const updateGroupMembership = async (
   isJoinEvent: boolean,
   email: string,
   user: Partial<userDetails>,
-  groupId: string,
+  groupId: string
 ): Promise<void> => {
   const groupDocPath = `Study Groups/${groupId}`;
   const groupDocRef = db.doc(groupDocPath);
@@ -98,20 +111,33 @@ export const updateGroupMembership = async (
       {
         joinedGroups: FieldValue.arrayUnion(groupId),
       },
-      {merge: true},
+      {merge: true}
     );
   } else {
     await userDocRef.set(
       {
         joinedGroups: FieldValue.arrayRemove(groupId),
       },
-      {merge: true},
+      {merge: true}
     );
   }
 };
 
-export const updateUserFields = async (db: Firestore,
-  user: Partial<userDetails>): Promise<void> => {
+export const updateGroupFields = async (
+  groupDocRef: firestore.DocumentReference,
+  location: string,
+  details: string
+): Promise<void> => {
+  const updateFields: any = {};
+  if (location) updateFields.location = location; 
+  if (details) updateFields.details = details;
+  await groupDocRef.update(updateFields);
+};
+
+export const updateUserFields = async (
+  db: Firestore,
+  user: Partial<userDetails>
+): Promise<void> => {
   const filteredUpdates = Object.fromEntries(
     Object.entries(user).filter(([, value]) => value !== null)
   );
@@ -120,38 +146,45 @@ export const updateUserFields = async (db: Firestore,
   await userDocRef.set(filteredUpdates, {merge: true});
 };
 
-
 export const sendSimpleMessageTemplate = async (group: groupDetails) => {
   dotenv.config();
   const mailgun = new Mailgun(FormData);
-  const mg = mailgun.client({username: "api", key: process.env.MAILGUN_KEY ||
-     ""});
+  const mg = mailgun.client({
+    username: "api",
+    key: process.env.MAILGUN_KEY || "",
+  });
 
   try {
-    const participantsList = group.participantDetails.map((p) =>
-      `<div style="margin-bottom: 10px;">
+    const participantsList = group.participantDetails
+      .map(
+        (p) =>
+          `<div style="margin-bottom: 10px;">
         <img src="${p.url}" alt="${p.name}'s profile" style="width: 50px;
         height: 50px; 
         border-radius: 50%; margin-right: 10px; vertical-align: middle;">
         <span style="vertical-align: middle;">${p.name} (${p.email})</span>
       </div>`
-    ).join("");
+      )
+      .join("");
 
     const htmlContent = `
       <h2>Study Group Reminder: ${group.title}</h2>
       <p><strong>Course:</strong> ${group.course}</p>
       <p><strong>Location:</strong> ${group.location}</p>
       <p><strong>Purpose:</strong> ${group.purpose}</p>
-      <p><strong>Start Time:</strong> ${group.startTime.toDate().
-    toLocaleString()}</p>
+      <p><strong>Start Time:</strong> ${group.startTime
+        .toDate()
+        .toLocaleString()}</p>
       <h3>Participants:</h3>
       ${participantsList}
     `;
 
     const data = await mg.messages.create("scottylabs.org", {
       from: "Mailgun Sandbox <postmaster@scottylabsm.org>",
-      to: group.participantDetails.map((participant) => `${participant.name}
-       <${participant.email}>`),
+      to: group.participantDetails.map(
+        (participant) => `${participant.name}
+       <${participant.email}>`
+      ),
       subject: `Study Group Reminder: ${group.title}`,
       html: htmlContent,
     });

@@ -1,11 +1,12 @@
 import {CloudTasksClient} from "@google-cloud/tasks";
 
+
 const projectId = "study-group-finder-448404";
 const location = "us-east4";
 const queue = "reminderEmails";
 const functionURL = "https://sendemail-jmpi7y54bq-uc.a.run.app";
 
-export const createCloudTask = async (groupID: string) => {
+export const createCloudTask = async (groupID: string, timestamp: number) => {
   const client = new CloudTasksClient();
   const parent = client.queuePath(projectId, location, queue);
   const task = {
@@ -16,7 +17,7 @@ export const createCloudTask = async (groupID: string) => {
       body: Buffer.from(JSON.stringify({groupID: groupID})).toString("base64"),
     },
     scheduleTime: {
-      seconds: Math.floor(Date.now() / 1000) + 60,
+      seconds: Math.floor(timestamp / 1000),
     },
   };
   try {
