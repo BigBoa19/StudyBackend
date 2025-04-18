@@ -48,7 +48,7 @@ export const updateGroup = async (
 
     const group = groupDocSnapshot.data() as groupDetails;
 
-    if (!(group.participantDetails && group.participantDetails.length == 0)) {
+    if (!(group.participantDetails && group.participantDetails.length > 0)) {
       res.status(400).send(
         {success: false, message: "Nonexistent or Empty Participant Details."}
       );
