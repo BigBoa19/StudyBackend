@@ -6,7 +6,7 @@ import {userDetails, groupDetails} from "./types";
 import dotenv from "dotenv";
 import Mailgun from "mailgun.js";
 import FormData from "form-data";
-import { firestore } from "firebase-admin";
+import {firestore} from "firebase-admin";
 
 export const fetchGroup = async (db: Firestore, id: string) => {
   const docPath = `Study Groups/${id}`;
@@ -129,7 +129,7 @@ export const updateGroupFields = async (
   details: string
 ): Promise<void> => {
   const updateFields: any = {};
-  if (location) updateFields.location = location; 
+  if (location) updateFields.location = location;
   if (details) updateFields.details = details;
   await groupDocRef.update(updateFields);
 };
@@ -173,8 +173,8 @@ export const sendSimpleMessageTemplate = async (group: groupDetails) => {
       <p><strong>Location:</strong> ${group.location}</p>
       <p><strong>Purpose:</strong> ${group.purpose}</p>
       <p><strong>Start Time:</strong> ${group.startTime
-        .toDate()
-        .toLocaleString()}</p>
+    .toDate()
+    .toLocaleString()}</p>
       <h3>Participants:</h3>
       ${participantsList}
     `;

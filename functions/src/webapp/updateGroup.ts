@@ -5,11 +5,8 @@ import {Firestore} from "firebase-admin/firestore";
 import {logJoinEvent} from "../bq/bqService";
 import {
   fetchGroup,
-  fetchUser,
-  isGroupFull,
   isUserOwnerOfGroup,
   updateGroupFields,
-  updateGroupMembership,
 } from "../helpers";
 
 export const updateGroup = async (
@@ -64,7 +61,7 @@ export const updateGroup = async (
       );
       return;
     }
-    await updateGroupFields(groupDocSnapshot.ref, location, details)
+    await updateGroupFields(groupDocSnapshot.ref, location, details);
     res.status(200).send({success: true, message: "Updated Group."});
     // try {
     //   await logJoinEvent(isJoinEvent, email, group.id);
