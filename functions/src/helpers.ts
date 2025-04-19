@@ -110,6 +110,11 @@ export const updateGroupMembership = async (
     await groupDocRef.update({
       participantDetails: FieldValue.arrayRemove(entryToUpdate),
     });
+    const group = (await groupDocRef.get()).data();
+    if (group && Array.isArray(group?.participantDetails) &&
+      group.participantDetails.length === 0) {
+      await groupDocRef.delete();
+    }
   }
   const userDocPath = `Users/${email}`;
   const userDocRef = db.doc(userDocPath);
