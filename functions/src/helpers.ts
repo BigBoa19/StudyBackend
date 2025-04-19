@@ -44,15 +44,17 @@ export const createGroup = async (
   groupData.startTime = Timestamp.fromMillis(tstamp);
 
   const docRef = await groupCollectionRef.add(groupData);
+  const groupID = docRef.id;
+  docRef.update({"id": groupID});
 
   userDocRef.ref.set(
     {
-      joinedGroups: FieldValue.arrayUnion(docRef.id),
+      joinedGroups: FieldValue.arrayUnion(groupID),
     },
     {merge: true}
   );
 
-  return docRef.id;
+  return groupID;
 };
 
 export const isUserInGroup = (

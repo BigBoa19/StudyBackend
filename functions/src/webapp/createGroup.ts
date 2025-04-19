@@ -57,7 +57,6 @@ export const createGroupHandler = async (
       message: "Group created successfully.",
       groupId: groupId,
     });
-    const startTime: Timestamp = group.startTime;
     await createCloudTask(groupId, tstamp);
   } catch (error) {
     logger.error("Error creating group:", {structuredData: true, error});
