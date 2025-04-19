@@ -1,7 +1,9 @@
 import {Request, Response} from "express";
 import * as logger from "firebase-functions/logger";
-import {Firestore} from "firebase-admin/firestore";
+import {Firestore, Timestamp} from "firebase-admin/firestore";
 import {createGroup} from "../helpers";
+import {createCloudTask} from "../util/scheduleEmail";
+import {createGroupInterface} from "../types";
 
 export const createGroupHandler = async (
   db: Firestore,
@@ -18,8 +20,8 @@ export const createGroupHandler = async (
     return;
   }
 
-  const {email, group} = req.body;
 
+  const {email, group, tstamp} = req.body as createGroupInterface;
   if (!group) {
     res.status(400).send({
       success: false,
@@ -28,13 +30,35 @@ export const createGroupHandler = async (
     return;
   }
 
+  if (!tstamp) {
+    res.status(400).send({
+      success: false,
+      message: "Invalid payload. 'tstamp' (in ms) is required.",
+    });
+    return;
+  }
+
+  if (
+    group.course == null ||
+    group.location == null ||
+    group.purpose == null ||
+    group.title == null ||
+    group.totalSeats == null
+  ) {
+    res.status(400).send({
+      success: false,
+      message: "Invalid payload. missing fields inside 'group'.",
+    });
+  }
   try {
-    const groupId = await createGroup(db, group, email);
+    const groupId = await createGroup(db, group, tstamp, email);
     res.status(200).send({
       success: true,
       message: "Group created successfully.",
       groupId: groupId,
     });
+    const startTime: Timestamp = group.startTime;
+    await createCloudTask(groupId, tstamp);
   } catch (error) {
     logger.error("Error creating group:", {structuredData: true, error});
     res.status(500).send({

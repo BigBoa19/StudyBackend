@@ -32,3 +32,9 @@ export interface userDetails {
   majors: string | null;
   year: string | null;
 }
+
+export interface createGroupInterface {
+  email: string;
+  group: Omit<groupDetails, "id" | "participantDetails | startTime">;
+  tstamp: number
+}

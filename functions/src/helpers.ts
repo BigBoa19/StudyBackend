@@ -1,7 +1,4 @@
-import {
-  Firestore,
-  FieldValue,
-} from "firebase-admin/firestore";
+import {Firestore, FieldValue, Timestamp} from "firebase-admin/firestore";
 import {userDetails, groupDetails} from "./types";
 import dotenv from "dotenv";
 import Mailgun from "mailgun.js";
@@ -24,28 +21,36 @@ export const fetchUser = async (db: Firestore, email: string) => {
 
 export const createGroup = async (
   db: Firestore,
-  group: Omit<groupDetails, "id">,
-  email?: string
+  group: Omit<groupDetails, "id" | "participantDetails">,
+  tstamp: number,
+  email: string
 ): Promise<string> => {
   const groupCollectionRef = db.collection("Study Groups");
-
+  const userDocRef = await fetchUser(db, email);
+  const user = userDocRef.data();
+  if (!user) {
+    throw Error("User Not Found");
+  }
   const groupData = {
     ...group,
-    participantDetails: group.participantDetails || [],
+    participantDetails: [
+      {
+        email: email,
+        name: user.fullName,
+        url: user.imageUrl || "",
+      },
+    ],
   };
+  groupData.startTime = Timestamp.fromMillis(tstamp);
 
   const docRef = await groupCollectionRef.add(groupData);
 
-  if (email) {
-    const userDocPath = `Users/${email}`;
-    const userDocRef = db.doc(userDocPath);
-    await userDocRef.set(
-      {
-        joinedGroups: FieldValue.arrayUnion(docRef.id),
-      },
-      {merge: true}
-    );
-  }
+  userDocRef.ref.set(
+    {
+      joinedGroups: FieldValue.arrayUnion(docRef.id),
+    },
+    {merge: true}
+  );
 
   return docRef.id;
 };
